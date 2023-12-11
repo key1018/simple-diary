@@ -4,10 +4,10 @@ import DiaryList from './DiaryList';
 // import Lifecycle from './Lifecycle';
 import React, {
   useMemo,
-  useState,
   useRef,
   useEffect,
   useCallback,
+  useReducer,
 } from 'react';
 // import OptimizeTest from './OptimizeTest';
 
@@ -36,9 +36,41 @@ import React, {
 //     created_date: new Date().getTime(),
 //   },
 // ];
+const reducer = (state, action) => {
+  // state : 상태변화가 일어나기 직전의 state
+  // action : 어떤 상태변화를 일으켜야하는지에 대한 정보들
+  switch (action.type) {
+    case 'INIT': {
+      return action.data;
+    }
+    case 'CREATE': {
+      const create_date = new Date().getTime();
+      const newItem = {
+        ...action.data, // onCreate함수를 실행하면서 전달했었던 데이터
+        create_date,
+      };
+      return [newItem, ...state];
+    }
+    case 'REMOVE': {
+      return state.filter((it) => it.id !== action.targetId);
+    }
+    case 'EDIT': {
+      return state.map((it) =>
+        it.id === action.targetId ? { ...it, content: action.newContent } : it
+      );
+    }
+    default:
+      return state; // 상태변화가 일어난 새로운 state를 반환, 아니면 기존 state를 반환
+  }
+};
 
-function App() {
-  const [data, setData] = useState([]);
+const App = () => {
+  // const [data, setData] = useState([]); // data를 useReducer를 통해서 관리할 것이기 때문에 주석처리함
+  const [data, dispatch] = useReducer(reducer, []);
+  // state : data => 현재 값 ( + return 되는 값)
+  // dispatch : action.typd => type 값을 보내값 해당 값에 따라서 return값이 달라짐
+  // reducer : disaptch가 상태변화를 일으킬 때 처리해주는 함수
+  // [] : data의 초기값
 
   const dataId = useRef(0);
 
@@ -58,8 +90,10 @@ function App() {
         id: dataId.current++,
       };
     });
-
-    setData(initData);
+    dispatch({ type: 'INIT', data: initData });
+    // INIT 데이터를 받는데 action에 필요한 데이터는 initData가 된다
+    // 즉, type을 INIT으로 전달하면서 data를 initData로 초기화함
+    // setData(initData); // setData가 할 일을 reducer가 해줌
   };
 
   useEffect(() => {
@@ -71,16 +105,12 @@ function App() {
   // dependecy Array값이 변화하지 않으면 첫 번째 인자로 전달한 콜백 함수를 계속 재사용 가능하다
 
   const onCreate = useCallback((author, content, emotion) => {
-    const created_date = new Date().getTime();
-    const newItem = {
-      author,
-      content,
-      emotion,
-      created_date,
-      id: dataId.current,
-    };
+    dispatch({
+      type: 'CREATE',
+      data: { author, content, emotion, id: dataId.current },
+    });
     dataId.current += 1;
-    setData((data) => [newItem, ...data]);
+    // setData((data) => [newItem, ...data]); // setData가 할 일을 reducer가 해줌
     // 함수형 업데이트
     // => 상태변화 함수에 함수를 전달하여 인자를 data로 받아서 newItem을 추가한 데이터함수(...data)를 return하는 콜백함수를 전달
   }, []);
@@ -95,16 +125,18 @@ function App() {
   // 결론 : 컴포넌트 생성부터 최초 렌더링까지의 작업
 
   const onRemove = useCallback((targetId) => {
-    setData((data) => data.filter((it) => it.id !== targetId));
+    dispatch({ type: 'REMOVE', targetId });
+    // setData((data) => data.filter((it) => it.id !== targetId)); // setData가 할 일을 reducer가 해줌
     // 원래 다이어리 리스트에서 삭제된 것을 제외한 새로운 다이어리 리스트들을 출력
   }, []);
 
   const onEdit = useCallback((targetId, newContent) => {
-    setData((data) =>
-      data.map((it) =>
-        it.id === targetId ? { ...it, content: newContent } : it
-      )
-    );
+    dispatch({ type: 'EDIT', targetId, newContent });
+    // setData((data) =>
+    //   data.map((it) =>
+    //     it.id === targetId ? { ...it, content: newContent } : it
+    //   )
+    // ); // setData가 할 일을 reducer가 해줌
   }, []);
 
   const getDiaryAnalysis = useMemo(() => {
@@ -134,7 +166,7 @@ function App() {
       <DiaryList onEdit={onEdit} onRemove={onRemove} diaryList={data} />
     </div>
   );
-}
+};
 
 // Highlight updates when components render. 를 최적화하기
 

@@ -2,7 +2,13 @@ import './App.css';
 import DiaryEditor from './DiaryEditor';
 import DiaryList from './DiaryList';
 // import Lifecycle from './Lifecycle';
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, {
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+} from 'react';
 // import OptimizeTest from './OptimizeTest';
 
 // https://jsonplaceholder.typicode.com/comments
@@ -60,7 +66,11 @@ function App() {
     getData();
   }, []);
 
-  const onCreate = (author, content, emotion) => {
+  // useCallback 함수
+  // 메모이제이션된 콜백을 반환힘 => 즉, 콜백 함수를 다시 반환해주는 역할을 한다
+  // dependecy Array값이 변화하지 않으면 첫 번째 인자로 전달한 콜백 함수를 계속 재사용 가능하다
+
+  const onCreate = useCallback((author, content, emotion) => {
     const created_date = new Date().getTime();
     const newItem = {
       author,
@@ -70,23 +80,35 @@ function App() {
       id: dataId.current,
     };
     dataId.current += 1;
-    setData([newItem, ...data]);
-  };
+    setData((data) => [newItem, ...data]);
+    // 함수형 업데이트
+    // => 상태변화 함수에 함수를 전달하여 인자를 data로 받아서 newItem을 추가한 데이터함수(...data)를 return하는 콜백함수를 전달
+  }, []);
+  // 빈 배열을 dependecy Array값으로 지정하면서 마운트되는 시점을 한 번만 만들고
+  // 이후에는 첫 번째 만들었던 함수를 재사용할 수 있도록함
 
-  const onRemove = (targetId) => {
-    const newDiaryList = data.filter((it) => it.id !== targetId);
-    setData(newDiaryList);
-  };
+  // 마운트(Mount)란?
+  // 1. props로 받은 값을 컴포넌트의 state로 설정할 때
+  // 2. 컴포넌트가 나타나면 외부 API를 요청해야 할 때
+  // 3. 라이브러리를 사용할 때
+  // 4. setInterval이나 setTimeout과 같은 작업
+  // 결론 : 컴포넌트 생성부터 최초 렌더링까지의 작업
 
-  const onEdit = (targetId, newContent) => {
-    setData(
+  const onRemove = useCallback((targetId) => {
+    setData((data) => data.filter((it) => it.id !== targetId));
+    // 원래 다이어리 리스트에서 삭제된 것을 제외한 새로운 다이어리 리스트들을 출력
+  }, []);
+
+  const onEdit = useCallback((targetId, newContent) => {
+    setData((data) =>
       data.map((it) =>
         it.id === targetId ? { ...it, content: newContent } : it
       )
     );
-  };
+  }, []);
 
   const getDiaryAnalysis = useMemo(() => {
+    // 값을 반환
     // 이미 계산 해 본 연산 결과를 기억해두었다가
     // 동일한 계산을  시키면, 다시 연산하지 않고 기억해 두었던 데이터를 반환 시키게 하는법방법
     const goodCount = data.filter((it) => it.emotion >= 3).length;
@@ -113,5 +135,7 @@ function App() {
     </div>
   );
 }
+
+// Highlight updates when components render. 를 최적화하기
 
 export default App;

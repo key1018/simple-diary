@@ -64,6 +64,17 @@ const reducer = (state, action) => {
   }
 };
 
+// context(문맥 생성) -> 자식 컴포넌트들을 Provider 이라는 문맥안에서 활동하게 하는 것
+// context 생성 : const MyContext = React.createContext(defaultValue);
+/* Context Provider를 통한 데이터 공급
+    <MyContext.Provide value={전역으로 전달하고자하는 값}>
+    {이 Context안에 위치할 자식 컴포넌트들}
+    </MyContext.Provide>
+  */
+// context도 내보내야 다른 컴포넌트들이 context에 접근해서 데이터를 받아올 수 있음
+export const DiaryStateContext = React.createContext(); // data를 전달하는 context
+export const DiaryDispatchContext = React.createContext(); // onCreate, onRemove를 전달하는 context
+
 const App = () => {
   // const [data, setData] = useState([]); // data를 useReducer를 통해서 관리할 것이기 때문에 주석처리함
   const [data, dispatch] = useReducer(reducer, []);
@@ -139,6 +150,11 @@ const App = () => {
     // ); // setData가 할 일을 reducer가 해줌
   }, []);
 
+  // onCreate, onRemove, onEdit을 하나의 context로 보내기위해 묶는 함수
+  const memoizedDiaspatches = useMemo(() => {
+    return { onCreate, onRemove, onEdit };
+  }, []); // 재생성되지 않도록 빈 배열[]을 전달
+
   const getDiaryAnalysis = useMemo(() => {
     // 값을 반환
     // 이미 계산 해 본 연산 결과를 기억해두었다가
@@ -156,15 +172,19 @@ const App = () => {
   const { goodCount, badCount, goodRatio } = getDiaryAnalysis; // 값으로 사용 O
 
   return (
-    <div className="App">
-      <DiaryEditor onCreate={onCreate} />
-      {/* <OptimizeTest /> */}
-      <div>전체 일기 : {data.length}</div>
-      <div>기분 좋은 일기 개수 : {goodCount}</div>
-      <div>기분 나쁜 일기 개수 : {badCount}</div>
-      <div>기분 좋은 일기 비율 : {goodRatio}</div>
-      <DiaryList onEdit={onEdit} onRemove={onRemove} diaryList={data} />
-    </div>
+    <DiaryStateContext.Provider value={data}>
+      <DiaryDispatchContext.Provider value={memoizedDiaspatches}>
+        <div className="App">
+          <DiaryEditor /*onCreate={onCreate}*/ />
+          {/* <OptimizeTest /> */}
+          <div>전체 일기 : {data.length}</div>
+          <div>기분 좋은 일기 개수 : {goodCount}</div>
+          <div>기분 나쁜 일기 개수 : {badCount}</div>
+          <div>기분 좋은 일기 비율 : {goodRatio}</div>
+          <DiaryList /*onEdit={onEdit} onRemove={onRemove} diaryList={data}*/ />
+        </div>
+      </DiaryDispatchContext.Provider>
+    </DiaryStateContext.Provider>
   );
 };
 

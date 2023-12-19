@@ -1,6 +1,12 @@
+import { useContext } from 'react';
 import DiaryItem from './DiaryItem';
+import { DiaryDispatchContext, DiaryStateContext } from './App';
 
-const DiaryList = ({ onEdit, diaryList, onRemove }) => {
+const DiaryList = () => {
+  const diaryList = useContext(DiaryStateContext); // context(문맥)에서 전달받은 데이터를 전달받기
+  const { onEdit } = useContext(DiaryDispatchContext);
+  const { onRemove } = useContext(DiaryDispatchContext);
+
   return (
     <div className="DiaryList">
       <h2>일기 리스트</h2>

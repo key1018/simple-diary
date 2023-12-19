@@ -1,6 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { DiaryDispatchContext } from './App';
 
-const DiaryEditor = ({ onCreate }) => {
+const DiaryEditor = () => {
+  const { onCreate } = useContext(DiaryDispatchContext);
+
   const authorInput = useRef();
   const contentInput = useRef();
 
@@ -74,4 +77,4 @@ const DiaryEditor = ({ onCreate }) => {
 };
 
 export default React.memo(DiaryEditor);
-// React.memo로 묶으면 DiaryEditor를 React.memo로 묶인 것으로 내보내겠다는미의미
+// React.memo로 묶으면 DiaryEditor를 React.memo로 묶인 것으로 내보내겠다는의미
